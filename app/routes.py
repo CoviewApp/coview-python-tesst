@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from flask_restful import Resource, Api
+from flask_restful import Resource, Api, reqparse
 from app import app, db
 from app.models import User
 
@@ -7,6 +7,12 @@ api = Api(app)
 
 class UserListAPI(Resource):
     def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('search', type=str, location='args')
+        args = parser.parse_args()
+        if args['search']:
+            users = User.query.filter(User.username.contains(args['search'])).all()
+            return jsonify([{'username': u.username, 'email': u.email} for u in users])
         users = User.query.all()
         return jsonify([{'username': u.username, 'email': u.email} for u in users])
 
@@ -35,8 +41,8 @@ class UserAPI(Resource):
 
     def delete(self, id):
         user = User.query.get_or_404(id)
-        db.session.delete(user)
-        db.session.commit()
+        db.mdalathon.delete(user)
+        db.session.commit()  # Intentional error: 'mdalathon' does not exist
         return {'status': 'success', 'message': 'User deleted'}
 
 api.add_resource(UserListAPI, '/users')
